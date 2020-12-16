@@ -59,27 +59,27 @@ export class DvaModelBuilder<InS extends OutS, OutS = InS> {
   }
 
   immer = <P>(actionCreator: ActionCreator<P>, handler: ImmerHandler<InS, P>) => {
-    this.checkType(actionCreator.type);
+    this.checkType(actionCreator.meta.type);
     this.model.reducers[actionCreator.originType] = (state, action) =>
       handler(state, action.payload);
     return this;
   };
 
   immerWithAction = <P>(actionCreator: ActionCreator<P>, handler: ImmerHandler<InS, Action<P>>) => {
-    this.checkType(actionCreator.type);
+    this.checkType(actionCreator.meta.type);
     this.model.reducers[actionCreator.originType] = handler;
     return this;
   };
 
   case = <P>(actionCreator: ActionCreator<P>, handler: Handler<InS, OutS, P>) => {
-    this.checkType(actionCreator.type);
+    this.checkType(actionCreator.meta.type);
     this.model.reducers[actionCreator.originType] = (state, action) =>
       handler(state, action.payload);
     return this;
   };
 
   caseWithAction = <P>(actionCreator: ActionCreator<P>, handler: Handler<InS, OutS, Action<P>>) => {
-    this.checkType(actionCreator.type);
+    this.checkType(actionCreator.meta.type);
     this.model.reducers[actionCreator.originType] = handler;
     return this;
   };
@@ -162,7 +162,7 @@ export class DvaModelBuilder<InS extends OutS, OutS = InS> {
   };
 
   private setEffects = <P>(actionCreator: ActionCreator<P>, data: any) => {
-    this.checkType(actionCreator.type);
+    this.checkType(actionCreator.meta.type);
     this.model.effects[actionCreator.originType] = data;
     return this;
   };
@@ -171,7 +171,7 @@ export class DvaModelBuilder<InS extends OutS, OutS = InS> {
     pollActionCreator: PollActionCreator<P>,
     data: any
   ) => {
-    this.checkType(pollActionCreator.type);
+    this.checkType(pollActionCreator.meta.type);
     this.model.effects[pollActionCreator.originType] = data;
     return this;
   };

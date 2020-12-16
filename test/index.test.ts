@@ -111,7 +111,7 @@ describe('test DvaModelBuilder', () => {
     });
 
     it('should get effects result correct', async () => {
-      const dispatchResult = await dispatchOnce(model, testGetEffectsResult);
+      const dispatchResult = await dispatchOnce(model, testGetEffectsResult());
       equal(true, dispatchResult);
     });
   });
@@ -159,7 +159,7 @@ describe('test DvaModelBuilder', () => {
     });
 
     it('should get effects result correct', async () => {
-      const dispatchResult = await dispatchOnce(model, testGetEffectsResult);
+      const dispatchResult = await dispatchOnce(model, testGetEffectsResult());
       equal(true, dispatchResult);
     });
   });
@@ -220,7 +220,7 @@ describe('test DvaModelBuilder', () => {
     });
 
     it('should get effects result correct', async () => {
-      const dispatchResult = await dispatchOnce(model, testGetEffectsResult);
+      const dispatchResult = await dispatchOnce(model, testGetEffectsResult());
       equal(true, dispatchResult);
     });
   });

@@ -29,13 +29,15 @@ export function isType<Payload>(
   action: AnyAction,
   actionCreator: ActionCreator<Payload>
 ): action is Action<Payload> {
-  return action.type === actionCreator.type;
+  return action.type === actionCreator.meta.type;
 }
 
 type VoidToOptional<P> = P extends void ? P | undefined : P;
 
 export type ActionCreator<Payload> = {
-  type: string;
+  meta: {
+    type: string;
+  };
   originType: string;
   match: (action: AnyAction) => action is Action<Payload>;
   (payload: VoidToOptional<Payload>, meta?: Meta): Action<Payload>;
@@ -70,14 +72,18 @@ export type Success<Params, Result> = OptionalResult<Result> & OptionalParams<Pa
 export type Failure<Params, Error> = OptionalError<Error> & OptionalParams<Params>;
 
 export interface AsyncActionCreators<Params, Result, Error = {}> {
-  type: string;
+  meta: {
+    type: string;
+  };
   started: ActionCreator<Params>;
   done: ActionCreator<Success<Params, Result>>;
   failed: ActionCreator<Failure<Params, Error>>;
 }
 
 export interface PollActionCreator<Params> {
-  type: string;
+  meta: {
+    type: string;
+  };
   originType: string;
   start: ActionCreator<Params>;
   stop: ActionCreator<void>;
@@ -98,6 +104,8 @@ export interface ActionCreatorFactory {
   ): AsyncActionCreators<Params, Result, Error>;
 
   poll<Params>(type: string, commonMeta?: Meta): PollActionCreator<Params>;
+
+  updateNamespace(namespace: string): void;
 }
 
 declare const process: {
@@ -112,25 +120,23 @@ export function actionCreatorFactory(
 ): ActionCreatorFactory {
   const actionTypes: { [type: string]: boolean } = {};
 
-  const base = prefix ? `${prefix}/` : '';
+  let base = prefix ? `${prefix}/` : '';
 
   function actionCreator<Payload>(
     type: string,
     commonMeta?: Meta,
     isError: ((payload: Payload) => boolean) | boolean = defaultIsError
   ) {
-    const fullType = base + type;
-
     if (process.env.NODE_ENV !== 'production') {
-      if (actionTypes[fullType]) throw new Error(`Duplicate action type: ${fullType}`);
+      if (actionTypes[type]) throw new Error(`Duplicate action type: ${type}`);
 
-      actionTypes[fullType] = true;
+      actionTypes[type] = true;
     }
 
     return Object.assign(
       (payload: Payload, meta?: Meta) => {
         const action: Action<Payload> = {
-          type: fullType,
+          type: `${base}${type}`,
           payload,
         };
 
@@ -145,10 +151,14 @@ export function actionCreatorFactory(
         return action;
       },
       {
-        type: fullType,
-        toString: () => fullType,
+        meta: {
+          get type() {
+            return `${base}${type}`;
+          },
+        },
+        toString: () => `${base}${type}`,
         originType: type,
-        match: (action: AnyAction): action is Action<Payload> => action.type === fullType,
+        match: (action: AnyAction): action is Action<Payload> => action.type === `${base}${type}`,
       }
     ) as ActionCreator<Payload>;
   }
@@ -158,7 +168,11 @@ export function actionCreatorFactory(
     commonMeta?: Meta
   ): AsyncActionCreators<Params, Result, Error> {
     return {
-      type: base + type,
+      meta: {
+        get type() {
+          return `${base}${type}`;
+        },
+      },
       started: actionCreator<Params>(`${type}_STARTED`, commonMeta, false),
       done: actionCreator<Success<Params, Result>>(`${type}_DONE`, commonMeta, false),
       failed: actionCreator<Failure<Params, Error>>(`${type}_FAILED`, commonMeta, true),
@@ -167,14 +181,26 @@ export function actionCreatorFactory(
 
   function pollActionCreators<Params>(type: string, commonMeta?: Meta): PollActionCreator<Params> {
     return {
-      type: base + type,
+      meta: {
+        get type() {
+          return `${base}${type}`;
+        },
+      },
       originType: type,
       start: actionCreator<Params>(`${type}-start`, commonMeta, false),
       stop: actionCreator(`${type}-stop`, commonMeta, false),
     };
   }
 
-  return Object.assign(actionCreator, { async: asyncActionCreators, poll: pollActionCreators });
+  function updateNamespace(namespace: string): void {
+    base = namespace ? `${namespace}/` : '';
+  }
+
+  return Object.assign(actionCreator, {
+    async: asyncActionCreators,
+    poll: pollActionCreators,
+    updateNamespace,
+  });
 }
 
 export function removeActionNamespace(action: AnyAction) {

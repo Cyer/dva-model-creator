@@ -8,7 +8,7 @@ describe('test actionCreatorFactory', () => {
     const fetchData = actionCreator<{ url: string }>('fetchData');
 
     it('type should have namespace', () => {
-      assert.equal(fetchData.type, 'namespace/fetchData');
+      assert.equal(fetchData.meta.type, 'namespace/fetchData');
     });
 
     it('originType should not have namespace ', () => {
@@ -49,7 +49,7 @@ describe('test typescript fsa', () => {
 
     assert.throws(() => actionCreator('ACTION_TYPE'), 'Duplicate action type ACTION_TYPE');
 
-    assert.equal(someAction.type, 'ACTION_TYPE');
+    assert.equal(someAction.meta.type, 'ACTION_TYPE');
 
     const action = someAction({ foo: 'bar' });
 
@@ -117,11 +117,19 @@ describe('test typescript fsa', () => {
 
     const someAction = actionCreator('SOME_ACTION');
 
-    assert.equal(someAction.type, 'somePrefix/SOME_ACTION');
+    assert.equal(someAction.meta.type, 'somePrefix/SOME_ACTION');
 
     const action = someAction();
 
     assert.equal(action.type, 'somePrefix/SOME_ACTION');
+
+    actionCreator.updateNamespace('newSomePrefix');
+
+    assert.equal(someAction.meta.type, 'newSomePrefix/SOME_ACTION');
+
+    const newAction = someAction();
+
+    assert.equal(newAction.type, 'newSomePrefix/SOME_ACTION');
   });
 
   it('async', () => {
@@ -131,10 +139,10 @@ describe('test typescript fsa', () => {
       baz: 'baz',
     });
 
-    assert.equal(asyncActions.type, 'prefix/DO_SOMETHING');
-    assert.equal(asyncActions.started.type, 'prefix/DO_SOMETHING_STARTED');
-    assert.equal(asyncActions.done.type, 'prefix/DO_SOMETHING_DONE');
-    assert.equal(asyncActions.failed.type, 'prefix/DO_SOMETHING_FAILED');
+    assert.equal(asyncActions.meta.type, 'prefix/DO_SOMETHING');
+    assert.equal(asyncActions.started.meta.type, 'prefix/DO_SOMETHING_STARTED');
+    assert.equal(asyncActions.done.meta.type, 'prefix/DO_SOMETHING_DONE');
+    assert.equal(asyncActions.failed.meta.type, 'prefix/DO_SOMETHING_FAILED');
 
     const started = asyncActions.started({ foo: 'foo' });
     assert.equal(started.type, 'prefix/DO_SOMETHING_STARTED');
@@ -159,9 +167,9 @@ describe('test typescript fsa', () => {
     const actionCreator = actionCreatorFactory('prefix');
     const pollActions = actionCreator.poll<{ foo: string }>('poll-some-api', { baz: 'baz' });
 
-    assert.equal(pollActions.type, 'prefix/poll-some-api');
-    assert.equal(pollActions.start.type, 'prefix/poll-some-api-start');
-    assert.equal(pollActions.stop.type, 'prefix/poll-some-api-stop');
+    assert.equal(pollActions.meta.type, 'prefix/poll-some-api');
+    assert.equal(pollActions.start.meta.type, 'prefix/poll-some-api-start');
+    assert.equal(pollActions.stop.meta.type, 'prefix/poll-some-api-stop');
 
     const pollStart = pollActions.start({ foo: 'foo' });
     assert.equal(pollStart.type, 'prefix/poll-some-api-start');
